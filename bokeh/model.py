@@ -10,7 +10,7 @@ from operator import itemgetter
 from six import iteritems
 
 from .core.json_encoder import serialize_json
-from .core.properties import Any, HasProps, List, MetaHasProps, String
+from .core.properties import Any, Dict, HasProps, Instance, List, MetaHasProps, String
 from .core.query import find
 from .themes import default as default_theme
 from .util.callback_manager import CallbackManager
@@ -77,8 +77,45 @@ class Viewable(MetaHasProps):
 class Model(with_metaclass(Viewable, HasProps, CallbackManager)):
     """ Base class for all plot-related objects """
 
-    name = String()
-    tags = List(Any)
+    name = String(help="""
+    An arbitrary, user-supplied name for this model.
+
+    This name can be useful when querying the document to retrieve specific
+    Bokeh models.
+
+    .. note::
+        No uniqueness guarantees or other conditions are enforced on any names
+        that are provided.
+
+    .. code:: python
+
+        r = plot.circle([1,2,3], [4,5,6], name="temp")
+
+    """)
+
+    tags = List(Any, help="""
+    An optional list of arbitrary, user-supplied values to attach to this
+    model.
+
+    .. code:: python
+
+        plot.tags = ["foo", 10]
+
+    """)
+
+    js_callbacks = Dict(String, List(Instance("bokeh.models.callbacks.CustomJS")), help="""
+    A mapping of attribute names to lists of CustomJS callbacks, to be set up on
+    BokehJS side when the document is created.
+
+    Typically, rather then modifying this property directly, callbacks should be
+    added using the ``Model.js_on_change`` method:
+
+    .. code:: python:
+
+        callback = CustomJS(code="console.log('stuff')")
+        plot.x_range.js_on_change('start', callback)
+
+    """)
 
     def __init__(self, **kwargs):
         self._id = kwargs.pop("id", make_id())
@@ -101,6 +138,28 @@ class Model(with_metaclass(Viewable, HasProps, CallbackManager)):
     @property
     def document(self):
         return self._document
+
+    def js_on_change(self, event, *callbacks):
+        '''
+
+        '''
+        if len(callbacks) == 0:
+            raise ValueError("js_on_change takes an event name and one or more callbacks, got only one parameter")
+
+        # handle any CustomJS callbacks here
+        from bokeh.models.callbacks import CustomJS
+        if not all(isinstance(x, CustomJS) for x in callbacks):
+            raise ValueError("not all callback values are CustomJS instances")
+
+        if event in self.properties():
+            event = "change:%s" % event
+
+        if event not in self.js_callbacks:
+            self.js_callbacks[event] = []
+        for callback in callbacks:
+            if callback in self.js_callbacks[event]:
+                continue
+            self.js_callbacks[event].append(callback)
 
     def trigger(self, attr, old, new, hint=None):
         # The explicit assumption here is that hinted events do not

@@ -1,7 +1,7 @@
-from bokeh.model import Model, _ModelInEmptyDocument
 from bokeh.core.properties import Int, String, Float, Instance, List, Any
-from bokeh.plotting import figure
 from bokeh.io import curdoc
+from bokeh.model import Model, _ModelInEmptyDocument
+from bokeh.plotting import figure
 
 def test_model_in_empty_document_sets_a_new_document_on_model_and_then_restores():
     doc = curdoc()
@@ -35,10 +35,9 @@ def test_model_in_empty_document_unsets_curdoc_on_model_references_and_then_rest
 
 def test_Model_pretty():
     class Foo1(Model):
-        a = Int(12)
-        b = String("hello")
+        pass
 
-    assert Foo1(id='xyz').pretty() == "bokeh.tests.test_model.Foo1(id='xyz', a=12, b='hello', name=None, tags=[])"
+    assert Foo1(id='1').pretty() == "bokeh.tests.test_model.Foo1(id='1', js_callbacks={}, name=None, tags=[])"
 
     class Foo2(Model):
         a = Int(12)
@@ -51,6 +50,7 @@ bokeh.tests.test_model.Foo2(
     a=12,
     b='hello',
     c=[1, 2, 3],
+    js_callbacks={},
     name=None,
     tags=[])"""
 
@@ -67,6 +67,7 @@ bokeh.tests.test_model.Foo3(
     b='hello',
     c=[1, 2, 3],
     d=None,
+    js_callbacks={},
     name=None,
     tags=[])"""
 
@@ -75,7 +76,7 @@ bokeh.tests.test_model.Foo3(
         b = String("hello")
         c = List(Int, [1, 2, 3])
         d = Float(None)
-        e = Instance(Foo1, lambda: Foo1(id='xyz'))
+        e = Instance(Foo2, lambda: Foo2(id='xyz'))
 
     assert Foo4(id='xyz').pretty() == """\
 bokeh.tests.test_model.Foo4(
@@ -84,12 +85,15 @@ bokeh.tests.test_model.Foo4(
     b='hello',
     c=[1, 2, 3],
     d=None,
-    e=bokeh.tests.test_model.Foo1(
+    e=bokeh.tests.test_model.Foo2(
         id='xyz',
         a=12,
         b='hello',
+        c=[1, 2, 3],
+        js_callbacks={},
         name=None,
         tags=[]),
+    js_callbacks={},
     name=None,
     tags=[])"""
 
@@ -109,7 +113,9 @@ bokeh.tests.test_model.Foo5(
     foo6=bokeh.tests.test_model.Foo6(
         id='uvw',
         foo5=bokeh.tests.test_model.Foo5(id='xyz', ...),
+        js_callbacks={},
         name=None,
         tags=[]),
+    js_callbacks={},
     name=None,
     tags=[])"""
